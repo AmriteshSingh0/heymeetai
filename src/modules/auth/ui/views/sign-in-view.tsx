@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
@@ -6,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
+import {FaGithub, FaGoogle} from "react-icons/fa"
 import { authClient } from "@/lib/auth-clients"
 
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -52,11 +53,36 @@ export const SignInView = () => {
       {
         email: data.email,
         password: data.password,
+        callbackURL:"/"
+
       },
       {
         onSuccess: () => {
           setPending(false);
           router.push("/");
+          
+        },
+        onError: ({ error }) => {
+          setPending(false);
+          setError(error.message);
+        },
+      },
+    );
+  };
+
+  const onSocial = async (provider:"github"| "google") => {
+    setError(null);
+    setPending(true);
+
+    authClient.signIn.social(
+      {
+        provider: provider,
+        callbackURL:"/"
+      },
+      {
+        onSuccess: () => {
+          setPending(false);
+          
         },
         onError: ({ error }) => {
           setPending(false);
@@ -133,28 +159,24 @@ export const SignInView = () => {
                   <Button
                     disabled={pending}
                     onClick={() =>
-                      authClient.signIn.social({
-                        provider: "google",
-                      })
+                      onSocial("google")
                     }
                     variant="outline"
                     type="button"
                     className="w-full"
                   >
-                    Google
+                    <FaGoogle/>
                   </Button>
                   <Button
                     disabled={pending}
                     onClick={() => {
-                      authClient.signIn.social({
-                        provider: "github",
-                      });
+                      onSocial("github")
                     }}
                     variant="outline"
                     type="button"
                     className="w-full"
                   >
-                    GitHub
+                    <FaGithub/>
                   </Button>
                 </div>
                 <div className="text-center text-sm">
