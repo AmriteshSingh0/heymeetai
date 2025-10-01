@@ -125,3 +125,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+input[type="search"]::-webkit-search-cancel-button {
+  cursor: pointer;
+}
