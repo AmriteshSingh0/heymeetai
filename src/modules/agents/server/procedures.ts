@@ -1,53 +1,93 @@
 import { db } from "@/db";
 import { agents } from "@/db/schema";
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
-import { TRPCError } from "@trpc/server";
-import { create } from "domain";
 import { agentsInsertSchema } from "../schemas";
-import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { PgTableWithColumns, PgColumn } from "drizzle-orm/pg-core";
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE_SIZE } from "@/constants";
+import { and, count, desc, eq, getTableColumns, ilike, sql } from "drizzle-orm";
+
 
 export const agentsRouter = createTRPCRouter({
 
-  getOne: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
-  const [existingAgent] = await db
-    .select({
-      meetingCount: sql<number>`5`,
-      ...getTablesColumns(agents),
-    })
-    .from(agents)
-    .where(eq(agents.id, input.id));
+  // GET ONE
+  getOne: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const [existingAgent] = await db
+        .select({
+          meetingCount: sql<number>`5`,
+          ...getTableColumns(agents),
+        })
+        .from(agents)
+        .where(eq(agents.id, input.id));
 
-  return existingAgent;
-}),
+      return existingAgent;
+    }),
 
-  getMany: protectedProcedure.query(async () => {
+  // GET MANY
+  getMany: protectedProcedure
+  .input(
+  z.object({
+    page: z.number().default(DEFAULT_PAGE),
+    pageSize: z
+      .number()
+      .min(MIN_PAGE_SIZE)
+      .max(MAX_PAGE_SIZE)
+      .default(DEFAULT_PAGE_SIZE),
+    search: z.string().nullish()
+  })
+   )
+  .query(async ({ctx, input}) => {
+    console.log("🔥 agents.getMany on the SERVER is running");
+    const {search, page, pageSize} = input;
     const data = await db
-      .select()
-      .from(agents);
+      .select({
+        meetingCount: sql<number>`6`,
+        ...getTableColumns(agents),
+      })
+      .from(agents)
+      .where(
+       and(
+          eq(agents.userId, ctx.auth.user.id),
+          search ? ilike(agents.name, `%${search}%`)  
+          : undefined,
+     )
+  )
+        .orderBy(desc(agents.createdAt), desc(agents.id))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize);
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      //throw new TRPCError({ code:"BAD_REQUEST"})
+    const total = await db
+        .select({ count: count() })
+        .from(agents)
+        .where(
+          and(
+            eq(agents.userId, ctx.auth.user.id),
+            search ? ilike(agents.name, `%${search}%`) : undefined
+          )
+        );
 
-    return data;
+      const totalPages = Math.ceil((total[0]?.count ?? 0) / pageSize);
+      return {
+        items: data,
+        total: total[0]?.count ?? 0,
+        totalPages,
+      };
+   
   }),
 
+  // CREATE
   create: protectedProcedure
-  .input(agentsInsertSchema)
-  .mutation(async ({ input, ctx }) => {
-    const [createdAgent] = await db
-      .insert(agents)
-      .values({
-        ...input,
-        userId: ctx.auth.user.id,
-      })
-      .returning();
+    .input(agentsInsertSchema)
+    .mutation(async ({ input, ctx }) => {
+      const [createdAgent] = await db
+        .insert(agents)
+        .values({
+          ...input,
+          userId: ctx.auth.user.id,
+        })
+        .returning();
 
-     return createdAgent; 
-  }), 
+      return createdAgent;
+    }),
 });
-
-function getTablesColumns(agents: PgTableWithColumns<{ name: "agents"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "agents"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; hasRuntimeDefault: true; enumValues: [string, ...string[]]; baseColumn: never; identity: undefined; generated: undefined; }, {}, {}>; name: PgColumn<{ name: "name"; tableName: "agents"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; hasRuntimeDefault: false; enumValues: [string, ...string[]]; baseColumn: never; identity: undefined; generated: undefined; }, {}, {}>; userId: PgColumn<{ name: "user_id"; tableName: "agents"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; hasRuntimeDefault: false; enumValues: [string, ...string[]]; baseColumn: never; identity: undefined; generated: undefined; }, {}, {}>; instructions: PgColumn<{ name: "instructions"; tableName: "agents"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; hasRuntimeDefault: false; enumValues: [string, ...string[]]; baseColumn: never; identity: undefined; generated: undefined; }, {}, {}>; createdAt: PgColumn<{ name: "created_at"; tableName: "agents"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: false; isAutoincrement: false; hasRuntimeDefault: false; enumValues: undefined; baseColumn: never; identity: undefined; generated: undefined; }, {}, {}>; updatedAt: PgColumn<{ name: "updated_at"; tableName: "agents"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: false; isAutoincrement: false; hasRuntimeDefault: false; enumValues: undefined; baseColumn: never; identity: undefined; generated: undefined; }, {}, {}>; }; dialect: "pg"; }>): any {
-  throw new Error("Function not implemented.");
-}
