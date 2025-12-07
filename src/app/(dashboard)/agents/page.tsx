@@ -11,6 +11,7 @@ import { headers } from "next/headers";
 import { loadSearchParams } from "@/modules/agents/params";
 import { SearchParams } from "nuqs";
 
+
 interface Props{
   searchParams: Promise<SearchParams>;
 }
