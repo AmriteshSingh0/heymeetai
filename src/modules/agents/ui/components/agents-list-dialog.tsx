@@ -15,10 +15,10 @@ export const NewAgentDialog = ({
       title="New Agent"
       description="Create a new agent"
       open={open}
-        onOpenChange={onOpenChange}
+      onOpenChange={onOpenChange}
     >
       <AgentForm
-      onSucess={()=> onOpenChange(false)}
+      onSuccess={()=> onOpenChange(false)}
       onCancel={()=> onOpenChange(false)}/>
     </ResponsiveDialog>
   );

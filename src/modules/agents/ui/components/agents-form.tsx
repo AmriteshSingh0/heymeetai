@@ -14,10 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { on } from "events";
 import { toast } from "sonner";
+import { TRPCError } from "@trpc/server";
 
 
 interface AgentsFormProps {
-    onSucess: () => void;   
+    onSuccess: () => void;   
     onCancel: () => void;
     initialValues?: AgentGetOne;
 }
@@ -50,6 +51,29 @@ export const AgentForm = ({
     }),
   );
 
+   const updateAgent = useMutation(
+    trpc.agents.update.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(
+          trpc.agents.getMany.queryOptions({})
+        )
+        if(initialValues?.id) {
+          await queryClient.invalidateQueries(
+            trpc.agents.getOne.queryOptions({ id: initialValues.id })
+          );
+        }
+        onSuccess?.();
+        toast.success("Agent updated successfully");
+      },
+      onError: (error) => {
+        if (error instanceof TRPCError) {
+          toast.error(error.message);
+        }
+        toast.error("Something went wrong.");
+      },
+    })
+  );
+
   const form = useForm<z.infer<typeof agentsInsertSchema>>({
     resolver: zodResolver(agentsInsertSchema),
     defaultValues: {
@@ -59,11 +83,12 @@ export const AgentForm = ({
   })
 
   const isEdit = !!initialValues?.id;
-  const isPending = createAgent.isPending; 
+  const isPending = createAgent.isPending || updateAgent.isPending; 
 
   const onSubmit = (values: z.infer<typeof agentsInsertSchema>) => {
     if (isEdit) {
-      console.log("TODO: updateAgent")
+       updateAgent.mutate({ ...values, id: initialValues?.id ?? "" });
+      return;
     } else {
       createAgent.mutate(values);
     }
@@ -124,5 +149,5 @@ export const AgentForm = ({
 };
 
 function onSuccess() {
-  throw new Error("Function not implemented.");
+  throw new Error("Function not.");
 }
