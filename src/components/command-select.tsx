@@ -9,6 +9,7 @@ import {
   CommandList,
   CommandResponsiveDialog,
 } from "@/components/ui/command";
+//import { set } from "better-auth";
 
 interface Props {
   options: Array<{
@@ -34,6 +35,14 @@ export const CommandSelect = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
   const selectedOption = options.find((option) => option.value === value);
+
+  const handleopenChange = (value: boolean) => {
+    onSearch?.("");
+    setOpen(value);
+  };
+
+
+
   return (
     <>
       <Button
@@ -52,7 +61,7 @@ export const CommandSelect = ({
       <CommandResponsiveDialog 
       shouldFilter={!onSearch} 
       open={open} 
-      onOpenChange={setOpen}
+      onOpenChange={handleopenChange}
       >
         <CommandInput placeholder="Search..." onValueChange={onSearch} />
         <CommandList>
