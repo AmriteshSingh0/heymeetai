@@ -2,8 +2,10 @@
 
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
+import { DataTable } from "@/modules/agents/ui/components/data-tables";
 import { useTRPC } from "@/trpc/client";
 import {  useSuspenseQuery } from "@tanstack/react-query";
+import { columns } from "../components/columns";
 
 export const MeetingsView = () => {
   const trpc = useTRPC();
@@ -11,7 +13,7 @@ export const MeetingsView = () => {
 
   return (
     <div>
-      TODO:Data table
+      <DataTable data={data.items} columns={columns}/>
     </div>
   );
 };
