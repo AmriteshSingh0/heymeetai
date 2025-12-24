@@ -3,12 +3,16 @@
 import React, { useState } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { LoadingState } from "@/components/loading-state";
 import { ErrorState } from "@/components/error-state";
 import MeetingIdViewHeader from "../components/meeting-id-view-header";
 import { useConfirm } from "@/modules/agents/hooks/use-confirm";
 import { UpdateMeetingDialog } from "../components/update-meeting-dialog";
+import UpcomingState from "../components/UpcomingState";
+import ActiveState from "../components/ActiveState";
+import ProcessingState from "../components/ProcessingState";
+import CancelledState from "../components/CancelledState";
 
 interface Props {
   meetingId: string;
@@ -45,6 +49,13 @@ const handleRemoveConfirmation = async () => {
     
 };
 
+  const isUpcoming = data.status === "upcoming";
+  const isCancelled = data.status === "cancelled";
+  const isCompleted = data.status === "completed";
+  const isActive = data.status === "active";
+  const isProcessing = data.status === "processing";
+
+
   return (
    <>
    <RemoveConfirmation/>
@@ -53,14 +64,27 @@ const handleRemoveConfirmation = async () => {
         onOpenChange={setOpenUpdateMeetingDialog}
         initialValues={data}
       />
-   <MeetingIdViewHeader
+    <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col  gap-y-4">
+       <MeetingIdViewHeader
           onEdit={()=>setOpenUpdateMeetingDialog(true)}
           onRemove={handleRemoveConfirmation}
           meetingName={data.name}
           meetingId={data.id}
         />
-   <div className="flex-1 pb-4 px-4 md:px-8 flex flex-col gap-y-4">
-    {JSON.stringify(data, null, 2)}
+       {isUpcoming && (
+          <UpcomingState
+            meetingId={meetingId}
+            onCancelMeeting={() => {
+              redirect("/meetings");
+            }}
+            isCancellingMeeting={false}
+          />
+        )}
+        {isActive && <ActiveState meetingId={meetingId} />}
+        {isProcessing && <ProcessingState />}
+        {isCompleted && <div>Completed Meeting View</div>}
+        {isCancelled && <CancelledState />}
+   
    </div>
    </>
   );
