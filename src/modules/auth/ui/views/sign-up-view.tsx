@@ -28,7 +28,7 @@ import { useState } from "react";
 const formSchema = z
   .object({
     name: z.string().min(1, { message: "Name Is Required" }),
-    email: z.email(),
+    email: z.string().email(),
     password: z.string().min(1, { message: "Password Is Required" }),
     confirmPassword: z.string().min(1, { message: "Password Is Required" }),
   })

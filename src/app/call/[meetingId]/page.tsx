@@ -1,10 +1,15 @@
 
+import { ErrorState } from "@/components/error-state";
+import { LoadingState } from "@/components/loading-state";
 import { auth } from "@/lib/auth";
+import CallView from "@/modules/call/ui/views/call.view";
 
 import { getQueryClient, trpc } from "@/trpc/server";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
 
 interface Props {
@@ -31,7 +36,25 @@ const page = async ({ params }: Props) => {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-     
+      <Suspense
+        fallback={
+          <LoadingState
+            title="Loading Call"
+            description="This may take a few seconds."
+          />
+        }
+      >
+        <ErrorBoundary
+          fallback={
+            <ErrorState
+              title="Something went wrong"
+              description="Please try again later"
+            />
+          }
+        >
+          <CallView meetingId={meetingId} />
+        </ErrorBoundary>
+      </Suspense>
       
     </HydrationBoundary>
   );

@@ -39,7 +39,7 @@ export const MeetingsView = () => {
       />
       {data.items.length === 0 && (
         <EmptyState
-          title="Create your first agent"
+          title="Create your first meeting"
           description="Schedule meetings to start interacting with your agents. Each meeting allows your agents to follow your instructions and engage with participants during the call."
         />
       )}

@@ -1,5 +1,6 @@
 "use client";
-import { StreamTheme, useCall } from "@stream-io/video-react-sdk";
+
+import { StreamTheme } from "@stream-io/video-react-sdk";
 import React, { useState } from "react";
 import CallLobby from "./CallLobby";
 import CallActive from "./CallActive";
@@ -7,21 +8,24 @@ import CallEnded from "./CallEnded";
 
 interface Props {
   meetingName: string;
+  onJoin?: () => void;
+  onLeave?: () => void;
 }
 
-const CallUi = ({ meetingName }: Props) => {
-  const call = useCall();
-  const [show, setShow] = useState<"lobby" | "call" | "ended">("lobby");
+const CallUi = ({ meetingName, onJoin,onLeave }: Props) => {
+  // ✅ FIX: initial UI depends on whether Stream exists
+  const initialState = onJoin ? "lobby" : "call";
+  const [show, setShow] = useState<"lobby" | "call" | "ended">(initialState);
 
-  const handleJoin = async () => {
-    if (!call) return;
-    await call.join();
-    setShow("call");
+  // ✅ FIX: Join is UI intent ONLY
+  const handleJoin = () => {
+    onJoin?.();     // before Stream → trigger setup
+    setShow("call"); // after Stream → just show call UI
   };
 
-  const handleLeave = async () => {
-    if (!call) return;
-    await call.endCall();
+  // ✅ FIX: Leave is UI-only
+  const handleLeave = () => {
+    onLeave?.();
     setShow("ended");
   };
 
