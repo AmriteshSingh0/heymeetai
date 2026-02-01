@@ -87,6 +87,9 @@ export const meetings = pgTable("meeting", {
   summary: text("summary"),
   startedAt: timestamp("started_at"),
   endedAt: timestamp("ended_at"),
+  //to fix the iat bug (;
+  agentConnectedAt: timestamp("agent_connected_at"),
+  
   createdAt: timestamp("created_at")
     .notNull()
     .$defaultFn(() => new Date()),

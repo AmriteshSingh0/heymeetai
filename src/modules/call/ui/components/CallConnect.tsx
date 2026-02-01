@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import {
   Call,
-  CallingState,
   StreamCall,
   StreamVideo,
   StreamVideoClient,
@@ -34,103 +33,131 @@ const CallConnect = ({
     trpc.meetings.generateToken.mutationOptions()
   );
 
-  // 🔒 Stream SDK objects MUST live in refs (never in state)
+  // 🔒 Stream SDK objects MUST live in refs
   const clientRef = useRef<StreamVideoClient | null>(null);
   const callRef = useRef<Call | null>(null);
+  const connectingRef = useRef(false);
 
-  // ✅ User intent (NOT Stream state)
+  // ✅ User intent
   const [joined, setJoined] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  /**
-   * 🔥 STREAM SETUP
-   * Runs ONLY when user clicks Join
-   * NEVER on initial render
-   */
+  /* ===================== CONNECT ===================== */
   useEffect(() => {
-    if (!joined) return;
+    if (!joined || clientRef.current || connectingRef.current) return;
 
     let cancelled = false;
 
     const connect = async () => {
-      // 🛑 Guard: StrictMode protection
-      if (clientRef.current) return;
+      try {
+        connectingRef.current = true;
+        setLoading(true);
 
-      setLoading(true);
+        console.log("[L2] Join intent detected");
 
-      // ✅ Token is generated ONLY at join time
-      const token: string = await generateToken();
+        // ✅ Token generated ONLY on join
+        const token = await generateToken();
+        if (cancelled) return;
 
-      console.log("STREAM TOKEN:", token);
-      console.log("TOKEN TYPE:", typeof token);
+        console.log("[L3] Stream token generated");
 
-      if (cancelled) return;
+        const client = new StreamVideoClient({
+          apiKey: process.env.NEXT_PUBLIC_STREAM_VIDEO_API_KEY!,
+          user: {
+            id: userId,
+            name: userName,
+            image: userImage,
+          },
+          token,
+        });
 
-      // ✅ Create Stream client ONCE
-      const client = new StreamVideoClient({
-        apiKey: process.env.NEXT_PUBLIC_STREAM_VIDEO_API_KEY!,
-        user: {
-          id: userId,
-          name: userName,
-          image: userImage,
-        },
-        token,
-      });
+        clientRef.current = client;
 
-      clientRef.current = client;
+        const call = client.call("default", meetingId);
 
-      // ⚠️ Create call ONLY after join intent
-      const call = client.call("default", meetingId);
-      call.camera.disable();
-      call.microphone.disable();
+        // 🔥 Attach metadata BEFORE join
+        await call.update({
+          custom: { meetingId },
+        });
 
-      callRef.current = call;
-      setLoading(false);
+        await call.join({ create: true });
+
+        call.camera.disable();
+        call.microphone.disable();
+
+        callRef.current = call;
+
+        console.log("[L7] Call joined successfully");
+      } catch (err) {
+        console.error("Error connecting to Stream:", err);
+      } finally {
+        setLoading(false);
+        connectingRef.current = false;
+      }
     };
 
     connect();
 
-    // 🚫 DO NOT destroy Stream objects here
-    // React StrictMode will unmount/remount in dev
     return () => {
       cancelled = true;
     };
   }, [joined, meetingId, userId, userName, userImage, generateToken]);
 
-  /**
-   * ✅ CLEANUP — USER INTENT ONLY
-   * This runs when user clicks Leave
-   */
+  /* ===================== LEAVE (LAYER 1: USER INTENT) ===================== */
   const handleLeave = async () => {
-    if (callRef.current?.state.callingState !== CallingState.LEFT) {
-      await callRef.current?.leave();
-      await callRef.current?.endCall();
+    try {
+      if (callRef.current) {
+        console.log("[END] User clicked Leave — ending call");
+
+         //  GRACE PERIOD TO END TO CALL TO HELP THE STREAM TO GET THE RECOERDING THE TANSCRIPTION (important)
+         await new Promise((res) => setTimeout(res, 3000));
+
+
+        await callRef.current.endCall(); // 🔥 AUTHORITATIVE END
+      }
+    } catch (err) {
+      console.error("Error ending call:", err);
+    } finally {
+      await clientRef.current?.disconnectUser();
+
+      callRef.current = null;
+      clientRef.current = null;
+
+      setJoined(false);
     }
-
-    await clientRef.current?.disconnectUser();
-
-    callRef.current = null;
-    clientRef.current = null;
-
-    setJoined(false);
   };
 
-  /**
-   * 🧑‍💻 PRE-JOIN UI (preview)
-   * NO Stream SDK mounted here
-   */
+  /* ===================== FAILSAFE (LAYER 2: BROWSER LIFECYCLE) ===================== */
+  useEffect(() => {
+    const handleUnload = () => {
+      if (callRef.current) {
+        console.log("[END] Browser unload — ending call");
+        callRef.current.endCall().catch(() => {});
+      }
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload); // Safari support
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("pagehide", handleUnload);
+    };
+  }, []);
+
+  /* ===================== UI STATES ===================== */
+
+  // 🧑‍💻 PRE-JOIN UI
   if (!joined) {
     return (
       <CallUi
         meetingName={meetingName}
-        onJoin={() => setJoined(true)} // 🔥 user intent
+        onJoin={() => setJoined(true)}
       />
     );
   }
 
-  /**
-   * ⏳ CONNECTING STATE
-   */
+  // ⏳ CONNECTING STATE
   if (loading || !clientRef.current || !callRef.current) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -139,16 +166,13 @@ const CallConnect = ({
     );
   }
 
-  /**
-   * ✅ ACTIVE CALL
-   * Stream mounts ONLY after Join
-   */
+  // ✅ ACTIVE CALL
   return (
     <StreamVideo client={clientRef.current}>
       <StreamCall call={callRef.current}>
         <CallUi
           meetingName={meetingName}
-          onLeave={handleLeave} // 🔥 cleanup happens HERE
+          onLeave={handleLeave}
         />
       </StreamCall>
     </StreamVideo>

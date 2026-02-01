@@ -13,7 +13,7 @@ interface Props {
 }
 
 const CallUi = ({ meetingName, onJoin,onLeave }: Props) => {
-  // ✅ FIX: initial UI depends on whether Stream exists
+  
   const initialState = onJoin ? "lobby" : "call";
   const [show, setShow] = useState<"lobby" | "call" | "ended">(initialState);
 

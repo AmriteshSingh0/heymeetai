@@ -57,6 +57,8 @@ const CallLobby = ({ onJoin }: Props) => {
   const handleJoin = () => {
     mediaStreamCleanup(); // stop preview before joining
     onJoin();
+    console.log("[L1] Join button clicked");
+
   };
 
   return (
