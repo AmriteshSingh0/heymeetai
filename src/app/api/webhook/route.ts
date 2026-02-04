@@ -11,6 +11,7 @@ import {
 import { db } from "@/db";
 import { agents, meetings } from "@/db/schema";
 import { streamVideo } from "@/lib/stream-video";
+import { inngest } from "@/inngest/client";
 //`import { inngest } from "@/inngest/client";
 
 /* ===================== IMPORTANT ===================== */
@@ -106,6 +107,14 @@ if (eventType === "call.session_started") {
   const call = streamVideo.video.call("default", meetingId);
   console.log("[L9a] Connecting agent", { agentId: existingAgent.id });
 
+  //LOG LOCAL SERVER CLOCK (THIS IS WHAT JWT USES)
+  console.log("[LOCAL CLOCK]", {
+    iso: new Date().toISOString(),
+    unix: Math.floor(Date.now() / 1000),
+  });
+
+  await new Promise(res => setTimeout(res, 1500));
+
   const realtimeClient = await streamVideo.video.connectOpenAi({
     call,
     openAiApiKey: process.env.OPENAI_API_KEY!,
@@ -190,13 +199,13 @@ if (eventType === "call.session_started") {
       );
     }
     //=====CALLED INNGEST FOR THE MEEETNG SUMMARY RGHT HERE ======
-    // await inngest.send({
-    //   name: "meetings/processing",
-    //   data: {
-    //     meetingId: updatedMeeting.id,
-    //     transcriptUrl: updatedMeeting.transcriptUrl!,
-    //   },
-    // });
+    await inngest.send({
+      name: "meetings/processing",
+      data: {
+        meetingId: updatedMeeting.id,
+        transcriptUrl: updatedMeeting.transcriptUrl!,
+      },
+    });
   }
   
  
