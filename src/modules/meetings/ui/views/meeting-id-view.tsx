@@ -13,6 +13,7 @@ import UpcomingState from "../components/UpcomingState";
 import ActiveState from "../components/ActiveState";
 import ProcessingState from "../components/ProcessingState";
 import CancelledState from "../components/CancelledState";
+import { CompletedState } from "../components/completed-state";
 
 interface Props {
   meetingId: string;
@@ -82,7 +83,7 @@ const handleRemoveConfirmation = async () => {
         )}
         {isActive && <ActiveState meetingId={meetingId} />}
         {isProcessing && <ProcessingState />}
-        {isCompleted && <div>Completed Meeting View</div>}
+        {isCompleted && <CompletedState data={data} />}
         {isCancelled && <CancelledState />}
    
    </div>

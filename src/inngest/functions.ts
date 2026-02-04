@@ -1,3 +1,5 @@
+
+//============HELLO WORLD IN INNGEST ====================== 
 // import { inngest } from "./client";
 
 // export const helloWorld = inngest.createFunction(
@@ -8,6 +10,12 @@
 //     return { message: `Hello ${event.data.email}!` };
 //   },
 // );
+
+
+
+//for inngest : npx inngest-cli@1.6.2 dev -u http://localhost:3000/api/inngest
+
+
 import { eq, inArray } from "drizzle-orm";
 import JSONL from "jsonl-parse-stringify";
 import OpenAI from "openai";
