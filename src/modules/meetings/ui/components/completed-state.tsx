@@ -8,8 +8,9 @@ import { GeneratedAvatar } from "@/components/generated-avatar";
 import { format } from "date-fns";
 import { formatDuration } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-// import { Transcript } from "./transcript";
-// import { ChatProvider } from "./chat-provider";
+import { Transcript } from "./transcript";
+import { ChatProvider } from "./chat-provider";
+
 
 interface Props {
     data: MeetingGetOne;
@@ -96,7 +97,7 @@ export const CompletedState = ({ data }: Props) => {
                                 className="flex items-center gap-x-2 [&>svg]:size-4"
                             >
                                 <ClockFadingIcon className="text-blue-700" />
-                                {typeof data.duration === "number" ? formatDuration(data.duration) : "No Duration"}
+                                {formatDuration(data.duration)}
                             </Badge>
                             <div>
                                 <Markdown
@@ -143,7 +144,7 @@ export const CompletedState = ({ data }: Props) => {
 
                     </div>
                 </TabsContent>
-                {/* <TabsContent
+                <TabsContent
                     value="transcript"
                 >
                     <Transcript meetingId={data.id} />
@@ -155,7 +156,7 @@ export const CompletedState = ({ data }: Props) => {
                             meetingId={data.id}
                             meetingName={data.name}
                         />
-                </TabsContent> */}
+                </TabsContent>
             </Tabs>
         </div>
     )
