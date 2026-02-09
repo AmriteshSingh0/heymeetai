@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { redirect, useRouter } from "next/navigation";
+import {  useRouter } from "next/navigation";
 import { LoadingState } from "@/components/loading-state";
 import { ErrorState } from "@/components/error-state";
 import MeetingIdViewHeader from "../components/meeting-id-view-header";
@@ -78,10 +78,7 @@ const handleRemoveConfirmation = async () => {
        {isUpcoming && (
           <UpcomingState
             meetingId={meetingId}
-            onCancelMeeting={() => {
-              redirect("/meetings");
-            }}
-            isCancellingMeeting={false}
+            
           />
         )}
         {isActive && <ActiveState meetingId={meetingId} />}
