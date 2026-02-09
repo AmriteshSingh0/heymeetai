@@ -8,12 +8,23 @@ import { redirect } from "next/navigation"
 import { UpgradeViewError, UpgradeViewLoading, UpgradeView } from "@/modules/premium/ui/views/upgrade-view"
 
 const Page = async () => {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
-    if (!session) {
-        redirect('/sign-in');
-    }
+
+     // const filters = await loadSearchParams(await searchParams);
+     console.log("Loading upgrade page")
+      const session = await auth.api.getSession({
+            headers: await headers(),
+         })
+         console.log(" reaching Session:", session)
+      
+         if (!session) {
+            redirect("/sign-in")
+         }
+    // const session = await auth.api.getSession({
+    //     headers: await headers()
+    // })
+    // if (!session) {
+    //     redirect('/sign-in');
+    // }
     const queryClient = getQueryClient();
     void queryClient.prefetchQuery(
         trpc.premium.getCurrentSubscription.queryOptions(),

@@ -21,7 +21,7 @@ export const UpgradeView = () => {
             <h5 className="font-medium text-2xl md:text-3xl">
                 You are on the{" "}
                 <span className="font-semibold text-primary">
-                    {currentSubscription?.name ?? "Free"}
+                    {currentSubscription?.name?? "Free plan"  }
                 </span>{" "}
                 plan.
             </h5>

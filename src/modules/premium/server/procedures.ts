@@ -4,6 +4,7 @@ import { agents, meetings,
      } from "@/db/schema";
 import { polarClient } from "@/lib/polar";
 import {
+  baseProcedure,
  //aseProcedure,
   createTRPCRouter,
   protectedProcedure,
@@ -21,7 +22,13 @@ export const premiumRouter = createTRPCRouter({
     });
 
      const subscription = customer.activeSubscriptions[0];
+    
 
+      if (!subscription) {
+        console.log("No active subscription found for user:", ctx.auth.user.id);
+    return ; 
+    
+  }
    
 
     const product = await polarClient.products.get({
@@ -31,7 +38,7 @@ export const premiumRouter = createTRPCRouter({
     return product;
   }),
 
-  getProducts: protectedProcedure.query(async () => {
+  getProducts: baseProcedure.query(async () => {
     const products = await polarClient.products.list({
       isArchived: false,
       isRecurring: true,
@@ -70,7 +77,7 @@ export const premiumRouter = createTRPCRouter({
 //     }
  const subscription = customer.activeSubscriptions[0];
 
-    if (!subscription) {
+    if (subscription) {
       return null;
     }
 
