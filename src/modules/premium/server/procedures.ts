@@ -26,7 +26,7 @@ export const premiumRouter = createTRPCRouter({
 
       if (!subscription) {
         console.log("No active subscription found for user:", ctx.auth.user.id);
-    return ; 
+    return null ; 
     
   }
    
